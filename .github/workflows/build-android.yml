@@ -23,8 +23,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     
     steps:
     - name: Checkout code
@@ -43,6 +41,11 @@ jobs:
         
     - name: Set up Android SDK
       uses: android-actions/setup-android@v2
+      
+    - name: Set Android environment variables
+      run: |
+        echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+        echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
       
     - name: Install dependencies
       run: |
