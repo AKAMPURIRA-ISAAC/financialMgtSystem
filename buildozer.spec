@@ -23,7 +23,10 @@ api = 30
 minapi = 21
 ndk = 23b
 arch = armeabi-v7a
+gradle_dependencies = 
 
 [buildozer:android]
 accept_sdk_license = True
 log_level = 2
+gradle_options = org.gradle.jvmargs=-Xmx2048m
+android_gradle_options = org.gradle.jvmargs=-Xmx2048m

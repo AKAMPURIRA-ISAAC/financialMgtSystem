@@ -103,26 +103,31 @@ jobs:
         cd ${{ github.workspace }}
         pwd
         ls -la
+        echo "Starting buildozer..."
         buildozer android debug 2>&1 | tee build.log
         BUILD_EXIT=$?
         echo "Build exit code: $BUILD_EXIT"
-        exit $BUILD_EXIT
         
-    - name: Check build directory on failure
-      if: failure()
+    - name: Capture buildozer logs
+      if: always()
       run: |
-        echo "=== Build Log (Last 200 lines) ==="
-        tail -200 build.log || echo "No build.log found"
+        echo "=== Main Build Log (Last 300 lines) ==="
+        tail -300 build.log || echo "No build.log found"
         echo ""
-        echo "=== Buildozer logs ==="
-        ls -lah .buildozer/android/platform/build-*/ 2>/dev/null || echo "No build dirs"
-        find .buildozer -name "*.log" -type f -exec echo "=== {} ===" \; -exec tail -50 {} \; 2>/dev/null || true
+        echo "=== Looking for buildozer platform logs ==="
+        find .buildozer -name "*.log" -type f -print0 2>/dev/null | xargs -0 ls -lah 2>/dev/null || echo "No logs found"
         echo ""
-        echo "=== Python/Cython compilation errors ==="
-        find .buildozer -name "*.c" -o -name "*.o" | head -20
+        echo "=== Content of buildozer platform logs ==="
+        find .buildozer -path "*/platform/*/build-*/*.log" -type f -exec echo "File: {}" \; -exec tail -100 {} \; 2>/dev/null || true
         echo ""
-        echo "=== Check bin directory ==="
-        ls -lah bin/ || echo "No bin directory"
+        echo "=== Check gradle build files ==="
+        find .buildozer -name "build.log" -o -name "output.json" 2>/dev/null | head -5
+        echo ""
+        echo "=== Bin directory status ==="
+        ls -lah bin/ 2>/dev/null || echo "No bin directory"
+        echo ""
+        echo "=== Buildozer dists directory ==="
+        ls -lah .buildozer/android/platform/build-*/dist/ 2>/dev/null || echo "No dist directory"
     - name: Check for APK artifacts
       if: always()
       run: |
