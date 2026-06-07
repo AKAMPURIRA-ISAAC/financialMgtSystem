@@ -52,14 +52,24 @@ jobs:
         
     - name: Accept Android SDK licenses
       run: |
-        yes | sudo /usr/lib/android-sdk/tools/bin/sdkmanager --licenses || true
-        yes | sudo /usr/lib/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
+        # Create license acceptance directory
+        mkdir -p ~/.android/licenses
         
-    - name: Pre-cache Android NDK
+        # Accept all Android SDK licenses
+        echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > ~/.android/licenses/android-sdk-license
+        echo "d56f5187479451eabf01fb78af6dfcb131b33910" >> ~/.android/licenses/android-sdk-license
+        
+        # Accept Google Play Services license
+        echo "e3c4a1885c25bfc95fa40e0e885f27c7ac9a0b76" > ~/.android/licenses/gplay-services-license
+        
+        # Accept Android SDK Preview license
+        echo "84831b9409646a918e30573bab4c9c91346d8abd" > ~/.android/licenses/android-sdk-preview-license
+        
+        ls -la ~/.android/licenses/
+        
+    - name: Prepare build directory
       run: |
         mkdir -p ~/.buildozer/android/platform
-        # Create empty NDK folder to prevent buildozer from downloading
-        mkdir -p ~/.buildozer/android/platform/android-ndk-r23c
         
     - name: Install Python build tools
       run: |
@@ -90,7 +100,15 @@ jobs:
         
     - name: Build Android APK (Debug)
       run: |
-        buildozer android debug 2>&1
+        buildozer android debug 2>&1 | tee build.log || true
+        
+    - name: Check build log
+      if: always()
+      run: |
+        if [ -f build.log ]; then
+          echo "=== Build Log ==="
+          tail -100 build.log
+        fi
         
     - name: List build outputs
       run: |
