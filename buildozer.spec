@@ -19,16 +19,11 @@ bin_dir = ./bin
 [app:android]
 permissions = INTERNET,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
 features = android.hardware.touchscreen
-api = 28
+api = 30
 minapi = 21
-ndk = 21
+ndk = 23b
 arch = armeabi-v7a
 
 [buildozer:android]
 accept_sdk_license = True
-android_api = 28
-android_minapi = 21
-android_ndk = 21
-android_accept_sdk_license = True
-android_sdk_path = /home/runner/.buildozer/android/platform/android-sdk
-android_ndk_path = /home/runner/.buildozer/android/platform/android-ndk-r21
+log_level = 2

@@ -100,27 +100,46 @@ jobs:
         
     - name: Build Android APK (Debug)
       run: |
-        buildozer android debug 2>&1 | tee build.log || true
+        cd ${{ github.workspace }}
+        pwd
+        ls -la
+        buildozer android debug 2>&1 | tee build.log
+        BUILD_EXIT=$?
+        echo "Build exit code: $BUILD_EXIT"
+        exit $BUILD_EXIT
         
-    - name: Check build log
+    - name: Check build directory on failure
+      if: failure()
+      run: |
+        echo "=== Build Log (Last 200 lines) ==="
+        tail -200 build.log || echo "No build.log found"
+        echo ""
+        echo "=== Buildozer logs ==="
+        ls -lah .buildozer/android/platform/build-*/ 2>/dev/null || echo "No build dirs"
+        find .buildozer -name "*.log" -type f -exec echo "=== {} ===" \; -exec tail -50 {} \; 2>/dev/null || true
+        echo ""
+        echo "=== Python/Cython compilation errors ==="
+        find .buildozer -name "*.c" -o -name "*.o" | head -20
+        echo ""
+        echo "=== Check bin directory ==="
+        ls -lah bin/ || echo "No bin directory"
+    - name: Check for APK artifacts
       if: always()
       run: |
-        if [ -f build.log ]; then
-          echo "=== Build Log ==="
-          tail -100 build.log
-        fi
-        
-    - name: List build outputs
-      run: |
-        ls -lah bin/
+        echo "=== Checking for APK files ==="
+        find . -name "*.apk" -type f 2>/dev/null || echo "No APK files found"
+        echo ""
+        echo "=== Bin directory contents ==="
+        ls -lah bin/ 2>/dev/null || mkdir -p bin && ls -lah bin/
         
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
-      if: success()
+      if: always()
       with:
-        name: app-apk
+        name: android-apk
         path: bin/*.apk
         retention-days: 30
+        if-no-files-found: warn
         
     - name: Create Release with APK
       if: success() && github.event_name == 'push'
