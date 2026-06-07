@@ -3,22 +3,10 @@ name: Build Android APK
 on:
   push:
     branches: [ main, master, develop ]
-  pull_request:
-    branches: [ main, master ]
   workflow_dispatch:
-    inputs:
-      build_type:
-        description: 'Build type'
-        required: true
-        default: 'debug'
-        type: choice
-        options:
-          - debug
-          - release
 
 permissions:
   contents: write
-  packages: write
 
 jobs:
   build:
@@ -28,89 +16,80 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Set up Python
+    - name: Set up Python 3.11
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
         
-    - name: Set up Java
+    - name: Set up Java 11
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '11'
         
-    - name: Set up Android SDK
-      uses: android-actions/setup-android@v2
-      
-    - name: Set Android environment variables
-      run: |
-        echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-        echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-      
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install buildozer cython
-        
     - name: Install system dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y libffi-dev libssl-dev python3-dev libjpeg-dev zlib1g-dev
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq \
+          libffi-dev libssl-dev python3-dev libjpeg-dev zlib1g-dev \
+          android-sdk android-sdk-build-tools
         
-    - name: Create buildozer.spec
+    - name: Set Android environment
       run: |
-        # Ensure buildozer.spec exists with correct format
-        if [ ! -f "buildozer.spec" ]; then
-          buildozer init --default
-        fi
+        echo "ANDROID_SDK_ROOT=/usr/lib/android-sdk" >> $GITHUB_ENV
+        echo "ANDROID_HOME=/usr/lib/android-sdk" >> $GITHUB_ENV
         
-    - name: Build debug APK
+    - name: Install Python build tools
       run: |
-        buildozer android debug
-      if: github.event.inputs.build_type != 'release'
-      
-    - name: Build release APK
+        python -m pip install --upgrade pip setuptools wheel
+        pip install buildozer cython
+        
+    - name: Verify buildozer
       run: |
-        buildozer android release
-      if: github.event.inputs.build_type == 'release'
-      
-    - name: Check build output
+        buildozer --version
+        python -c "import buildozer; print(f'Buildozer path: {buildozer.__file__}')"
+        
+    - name: Check environment
+      run: |
+        echo "Java version:"
+        java -version
+        echo ""
+        echo "Android SDK:"
+        echo $ANDROID_SDK_ROOT
+        echo ""
+        echo "Buildozer spec:"
+        cat buildozer.spec | head -20
+        
+    - name: Build Android APK (Debug)
+      run: |
+        buildozer android debug 2>&1
+        
+    - name: List build outputs
       run: |
         ls -lah bin/
         
-    - name: Upload artifacts
+    - name: Upload APK artifact
       uses: actions/upload-artifact@v4
+      if: success()
       with:
         name: app-apk
         path: bin/*.apk
         retention-days: 30
         
-    - name: Create Release
-      uses: ncipollo/release-action@v1.14.0
-      if: success()
+    - name: Create Release with APK
+      if: success() && github.event_name == 'push'
+      uses: softprops/action-gh-release@v2
       with:
-        artifacts: "bin/*.apk"
-        token: ${{ secrets.GITHUB_TOKEN }}
-        tag: "release-${{ github.run_number }}-${{ github.event.inputs.build_type }}"
+        files: bin/*.apk
+        tag_name: build-${{ github.run_number }}
         body: |
-          # Finance Pro 2.0 - Android Build
+          # Finance Pro 2.0 Android Build #${{ github.run_number }}
           
-          Build Number: ${{ github.run_number }}
-          Build Type: ${{ github.event.inputs.build_type || 'debug' }}
-          Commit: ${{ github.sha }}
+          **Build Details:**
+          - Commit: ${{ github.sha }}
+          - Branch: ${{ github.ref_name }}
           
-          ## Download APK
-          Download the APK file from the assets below and install on your Android phone.
-          
-          ### Installation Steps:
-          1. Enable Developer Mode on your phone
-          2. Enable USB Debugging
-          3. Connect phone via USB
-          4. Run: `adb install app-*.apk`
-          
-          ### Release Notes
-          - Full Finance Pro 2.0 features
-          - Machine Learning predictions
-          - Anomaly detection
-          - Auto-categorization
-          - Multi-currency support
+          **Download and Install:**
+          ```bash
+          adb install app-*.apk
+          ```
