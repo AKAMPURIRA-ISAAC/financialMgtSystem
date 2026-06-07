@@ -3,12 +3,6 @@
 # Web Framework & UI
 streamlit==1.58.0
 plotly==6.8.0
-fastapi==0.104.1
-uvicorn==0.24.0
-pydantic==2.5.0
-
-# Environment & Configuration
-python-dotenv==1.0.0
 
 # Data Processing & Analysis
 pandas==2.1.3
@@ -18,17 +12,8 @@ numpy==1.26.2
 scikit-learn==1.3.2
 statsmodels==0.14.0
 
-# Utilities
+# Utilities & Core
 requests==2.31.0
 python-dateutil==2.8.2
 pytz==2023.3
-
-# Network & API
-requests==2.31.0
-
-# Utilities
-python-dateutil==2.8.2
-pytz==2023.3
-
-# Report Generation (optional)
-reportlab==4.0.7
+python-dotenv==1.0.0
