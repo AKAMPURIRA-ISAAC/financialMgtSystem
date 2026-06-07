@@ -16,6 +16,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
+    - name: Cache buildozer cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.buildozer
+          ~/.gradle
+        key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+        restore-keys: |
+          ${{ runner.os }}-buildozer-
+      
     - name: Set up Python 3.11
       uses: actions/setup-python@v5
       with:
@@ -44,6 +54,12 @@ jobs:
       run: |
         yes | sudo /usr/lib/android-sdk/tools/bin/sdkmanager --licenses || true
         yes | sudo /usr/lib/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
+        
+    - name: Pre-cache Android NDK
+      run: |
+        mkdir -p ~/.buildozer/android/platform
+        # Create empty NDK folder to prevent buildozer from downloading
+        mkdir -p ~/.buildozer/android/platform/android-ndk-r23c
         
     - name: Install Python build tools
       run: |
