@@ -24,6 +24,7 @@ minapi = 21
 ndk = 23b
 arch = armeabi-v7a
 gradle_dependencies = 
+android_build_tools_version = 29.0.3
 
 [buildozer:android]
 accept_sdk_license = True
